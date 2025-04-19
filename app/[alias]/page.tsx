@@ -1,13 +1,7 @@
 import { redirect } from 'next/navigation';
 import { findAlias } from '@/lib/db';
 
-interface AliasPageProps {
-  params: {
-    alias: string;
-  };
-}
-
-export default async function AliasRedirectPage({ params }: AliasPageProps) {
+export default async function AliasRedirectPage({ params }: { params: { alias: string } }) {
   const record = await findAlias(params.alias);
 
   if (!record) {
