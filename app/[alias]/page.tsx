@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { findAlias } from '@/lib/db';
 
-export default async function RedirectPage({ params }: { params: { alias: string } }) {
+export default async function RedirectPage({ params }: { params: { alias: string } }): Promise<any> {
   const { alias } = params;
 
   const record = await findAlias(alias);
