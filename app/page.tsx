@@ -1,6 +1,9 @@
 'use client';
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { handleCreateAlias } from '@/lib/create';
+import { Short } from '@/type';
 
 const Container = styled.div`
   display: flex;
@@ -38,7 +41,7 @@ const Subtitle = styled.p`
   max-width: 600px;
 `;
 
-const Form = styled.div`
+const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -60,6 +63,17 @@ const Input = styled.input`
     border-color: #6bbf59;
     outline: none;
   }
+`;
+
+const Label = styled.label`
+  font-size: 1.1rem;
+  color: #2c5f2d;
+  font-weight: 600;
+`;
+
+const Hint = styled.div`
+  font-size: 0.9rem;
+  color: #6a926f;
 `;
 
 const Button = styled.button`
@@ -92,52 +106,73 @@ const ResultLink = styled.a`
 export default function Home() {
   const [alias, setAlias] = useState('');
   const [url, setUrl] = useState('');
-  const [message, setMessage] = useState('');
-  const [shortUrl, setShortUrl] = useState('');
+  const [shortened, setShortened] = useState('');
+  const [error, setError] = useState('');
+  const [origin, setOrigin] = useState('');
 
-  const handleSubmit = async () => {
-    const res = await fetch('/api/shorten', {
-      method: 'POST',
-      body: JSON.stringify({ alias, url }),
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      setMessage(data.error);
-      setShortUrl('');
-    } else {
-      setMessage('');
-      setShortUrl(data.shortUrl);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
     }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setShortened('');
+
+    const response: Short | null = await handleCreateAlias(alias, url);
+
+    if (!response) {
+      setError('Alias may be taken or URL is invalid.');
+      return;
+    }
+
+    const shortUrl = `${window.location.origin}/${response.alias}`;
+    setShortened(shortUrl);
   };
 
   return (
     <>
-    <NavBar>My URL Shortener</NavBar>
-    <Container>
-    <Heading>My URL Shortener</Heading>
-    <Subtitle>Create custom short links you can copy, share, and use anywhere.</Subtitle>
-      <Form>
-        <Input
-          placeholder="Custom Alias (e.g. my-link)"
-          value={alias}
-          onChange={(e) => setAlias(e.target.value)}
-        />
-        <Input
-          placeholder="Full URL (e.g. https://example.com)"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
-        <Button onClick={handleSubmit}>Shorten URL</Button>
-        {message && <Message>{message}</Message>}
-        {shortUrl && (
-          <ResultLink href={shortUrl} target="_blank" rel="noopener noreferrer">
-            {shortUrl}
-          </ResultLink>
-        )}
-      </Form>
-    </Container>
+      <NavBar>My URL Shortener</NavBar>
+      <Container>
+        <Heading>My URL Shortener</Heading>
+        <Subtitle>Create custom short links you can copy, share, and use anywhere.</Subtitle>
+        <Form onSubmit={handleSubmit}>
+          <Label>URL</Label>
+          <Input
+            type="text"
+            placeholder="https://example.com/very/long/url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            required
+          />
+
+          <Label>Custom Alias</Label>
+          {origin && (
+            <Hint>
+              {origin}/<span>your-custom-alias</span>
+            </Hint>
+          )}
+          <Input
+            type="text"
+            placeholder="your-custom-alias"
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+            required
+          />
+
+          <Button type="submit">Shorten URL</Button>
+
+          {shortened && (
+            <ResultLink href={shortened} target="_blank" rel="noopener noreferrer">
+              {shortened}
+            </ResultLink>
+          )}
+
+          {error && <Message>Error: {error}</Message>}
+        </Form>
+      </Container>
     </>
   );
 }
