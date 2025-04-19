@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { findAlias } from '@/lib/models';
+import { findAlias } from '@/lib/db';
 
 interface AliasPageProps {
   params: {
